@@ -1,0 +1,157 @@
+openapi: 3.0.4
+info:
+  title: API Сервиса блокировок клиентов
+  description: |
+    API для управления блокировками платежей клиентов в Т-Банке.
+    Позволяет:
+    - Блокировать платежи конкретного клиента
+    - Разблокировать платежи клиента
+    - Проверять, заблокирован ли клиент
+    - Отличать блокировки мошенников от блокировок по другим причинам
+  version: 1.0.0
+servers:
+  - url: 'https://api.tbank.ru/v1'
+    description: Основной сервер
+paths:
+  '/clients/{clientId}/blocks':
+    post:
+      summary: Заблокировать клиента
+      description: Создает новую запись о блокировке для указанного клиента.
+      tags:
+        - Блокировки
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          description: ID клиента для блокировки
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlockRequest'
+      responses:
+        '201':
+          description: Клиент успешно заблокирован.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockInfo'
+        '400':
+          description: 'Неверный запрос, не указана причина).'
+        '404':
+          description: Клиент не найден.
+        '409':
+          description: 'Конфликт, клиент уже заблокирован.'
+  '/clients/{clientId}/active-block':
+    delete:
+      summary: Разблокировать клиента
+      description: >-
+        Снимает текущую активную блокировку с клиента,необходимо проставлить
+        дату окончания.
+      tags:
+        - Блокировки
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          description: ID клиента для разблокировки
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Блокировка успешно снята.
+        '404':
+          description: Клиент или активная блокировка не найдены.
+  /clients/check-block-status:
+    post:
+      summary: Проверить статус блокировки клиента
+      description: >-
+        Проверяет, есть ли у клиента активная блокировка. Используется POST для
+        большей безопасности.
+      tags:
+        - Блокировки
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientId:
+                  type: integer
+                  example: 55156
+              required:
+                - clientId
+      responses:
+        '200':
+          description: Успешный ответ со статусом блокировки.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientBlockStatus'
+        '404':
+          description: Клиент не найден.
+components:
+  schemas:
+    BlockRequest:
+      type: object
+      description: Тело запроса на блокировку клиента.
+      properties:
+        reasonId:
+          type: integer
+          description: ID причины блокировки.
+          example: 1
+        endDate:
+          type: string
+          format: date-time
+          description: 'Дата окончания блокировки необязательна, если блокировка бессрочная.'
+          example: '2026-01-01T12:00:00Z'
+      required:
+        - reasonId
+    BlockInfo:
+      type: object
+      description: Полная информация о блокировке.
+      properties:
+        blockId:
+          type: integer
+          description: Уникальный ID блокировки.
+          example: 987
+        clientId:
+          type: integer
+          description: ID клиента.
+          example: 55156
+        reasonId:
+          type: integer
+          description: ID причины блокировки.
+          example: 1
+        reasonName:
+          type: string
+          description: Текстовое описание причины блокировки.
+          example: Подозрение на мошенничество
+        isFraud:
+          type: boolean
+          description: Является ли причина блокировки мошеннической.
+          example: true
+        startDate:
+          type: string
+          format: date-time
+          description: Дата начала блокировки.
+        endDate:
+          type: string
+          format: date-time
+          description: Дата окончания блокировки.
+          nullable: true
+    ClientBlockStatus:
+      type: object
+      description: Ответ с текущим статусом блокировки клиента.
+      properties:
+        isBlocked:
+          type: boolean
+          description: Заблокирован ли клиент в данный момент.
+        activeBlock:
+          $ref: '#/components/schemas/BlockInfo'
+          description: Информация об активной блокировке (если есть).
+          nullable: true
