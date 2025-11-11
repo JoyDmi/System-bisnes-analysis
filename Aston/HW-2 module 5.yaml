@@ -1,0 +1,185 @@
+openapi: 3.0.0
+info:
+  title: Домашнее задание // Проектирование ИС. Интеграции
+  description: |-
+    Это ДЗ-2 и спецификация, как: \
+    Получить список всех товаров.\
+    Получить информацию о конкретном товаре по его ID.\
+    Добавить новый товар.\
+    Обновить информацию о существующем товаре. \
+    Удалить товар.
+  version: 1.0.0
+  contact:
+    name: Дмитрий
+    email: demasya13@gmail.com
+  license:
+    name: MIT
+servers:
+  - url: 'https://shop.swagger.io/api/v1'
+tags:
+  - name: Products
+    description: Всё о товарах
+paths:
+  /products:
+    get:
+      description: Метод получения всех товаров.
+      summary: Получить список товаров
+      tags:
+        - Products
+      operationId: readAllProducts
+      responses:
+        '200':
+          description: Успешный ответ со списком  товаров
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Products'
+        default:
+          description: Все нестандартные ответы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      description: Метод добавления товара.
+      summary: Добавление товара.
+      tags:
+        - Products
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        default:
+          description: Все нестандартные ответы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/products/{product_id}':
+    get:
+      summary: Метод получения товара по id.
+      tags:
+        - Products
+      operationId: readProductsById
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          description: Идентификатор товара
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Успешный ответ запрошенного товара
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        default:
+          description: Все нестандартные ответы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - Products
+      summary: Метод обновления информации о товаре.
+      description: Полное обновление информации по id.
+      operationId: updateProduct
+      parameters:
+        - name: product_id
+          in: path
+          description: id Товара для обновления
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+        description: Обновленный товар
+      responses:
+        '200':
+          description: 'Успешный ответ, что информация о товаре обновлена.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        default:
+          description: Все нестандартные ответы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Products
+      summary: Метод удаления товара.
+      description: Удалить товар.
+      operationId: deleteProductById
+      parameters:
+        - name: product_id
+          in: path
+          description: id Товара для удаления
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Успешно удалено
+          content:
+            application/json: {}
+        default:
+          description: Все нестандартные ответы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Product:
+      type: object
+      required:
+        - name
+        - price
+      properties:
+        product_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Штора
+        price:
+          type: number
+          format: float
+          minimum: 0
+          example: 1000.99
+    Products:
+      type: array
+      items:
+        $ref: '#/components/schemas/Product'
+    Error:
+      required:
+        - code
+        - message
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
